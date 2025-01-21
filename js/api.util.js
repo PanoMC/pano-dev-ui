@@ -7,6 +7,15 @@ export const NETWORK_ERROR = "NETWORK_ERROR";
 
 export const networkErrorBody = { result: "error", error: NETWORK_ERROR };
 
+export function buildQueryParams(params) {
+  const queryString = Object.keys(params)
+    .filter(key => params[key])
+    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+    .join('&');
+
+  return queryString === "" ? "": "?" + queryString;
+}
+
 const ApiUtil = {
   get({ path, request, csrfToken, token }) {
     return this.customRequest({ path, request, csrfToken, token });
