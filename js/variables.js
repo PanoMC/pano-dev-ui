@@ -1,4 +1,4 @@
-export const API_URL = import.meta.env.VITE_API_URL;
+export const API_URL = process.env.API_URL || import.meta.env.VITE_API_URL;
 export const UI_URL = import.meta.env.VITE_UI_URL;
 export const PANEL_URL = import.meta.env.VITE_PANEL_URL;
 export const SETUP_URL = import.meta.env.VITE_SETUP_URL;
