@@ -1,25 +1,27 @@
 import fs from "fs";
 
 import { browser } from "$app/environment";
-
-let pathStuff, urlStuff;
-
-if (!browser) {
-  const path = await import("path");
-  const url = await import("url");
-
-  pathStuff = path
-  urlStuff = url
-}
-
 import ApiUtil from "$lib/api.util.js";
 import { API_URL, PLUGIN_DEV_MODE } from "$lib/variables.js";
 import { base } from "$app/paths";
 
+let path, url, admZip;
+
+if (!browser) {
+  const pathStuff = await import("path");
+  const urlStuff = await import("url");
+  const admZipStuff = await import("adm-zip");
+
+  path = pathStuff;
+  url = urlStuff;
+  admZip = admZipStuff.default;
+}
+
 const plugins = {};
 
-const pluginsFolder = "plugins/";
+const pluginsFolder = "plugins";
 const manifestFileName = "manifest.json";
+const pluginUiZipFileName = "plugin-ui.zip";
 
 function log(message) {
   console.log(`[Plugin Manager] ${message}`);
@@ -29,161 +31,267 @@ const pano = {
   isPanel: base === "/panel",
 };
 
-export async function prepareSiteInfo(siteInfo) {
-  if (!PLUGIN_DEV_MODE) {
-    return siteInfo;
-  }
-
+function createPluginsFolder() {
   if (!fs.existsSync(pluginsFolder)) {
     fs.mkdirSync(pluginsFolder, { recursive: true });
   }
+}
 
+function isDirectory(path) {
+  try {
+    return fs.statSync(path).isDirectory();
+  } catch (error) {
+    return false;
+  }
+}
+
+function isDirectoryEmpty(directoryPath) {
+  try {
+    const items = fs.readdirSync(directoryPath);
+    return items.length === 0;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function downloadAndExtractZip(file, outputDir) {
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const zip = new admZip(buffer, {});
+
+  zip.extractAllTo(outputDir, true);
+}
+
+function readPluginsFromFolder() {
   const readPluginsFolder = fs.readdirSync(pluginsFolder);
 
   const plugins = {};
 
-  readPluginsFolder.forEach((pluginId) => {
+  readPluginsFolder
+    .filter((pluginId) => isDirectory(path.join(pluginsFolder, pluginId)))
+    .forEach((pluginId) => {
+      try {
+        const manifestFile = fs.readFileSync(
+          path.join(pluginsFolder, pluginId, manifestFileName),
+          {
+            encoding: "utf8",
+            flag: "r",
+          },
+        );
+
+        plugins[pluginId] = JSON.parse(manifestFile);
+      } catch (_) {}
+    });
+
+  return plugins;
+}
+
+async function downloadPluginUiZip(pluginId) {
+  return await ApiUtil.get({
+    path: `/api/plugins/${pluginId}/resources/${pluginUiZipFileName}`,
+    blob: true,
+  });
+}
+
+async function verifyPlugins(pluginsInFolder, pluginsInfo) {
+  const pluginIdInFolderList = Object.keys(pluginsInFolder);
+
+  // Fix broken plugin folder, if it doesn't contain server or client
+  pluginIdInFolderList.forEach((pluginId) => {
+    const pluginFolder = path.join(pluginsFolder, pluginId)
+    const serverIsDirectory = isDirectory(
+      path.join(pluginFolder, "server"),
+    );
+    const clientIsDirectory = isDirectory(
+      path.join(pluginFolder, "client"),
+    );
+
+    let remove;
+
+    if (serverIsDirectory && !clientIsDirectory) {
+      fs.rmSync(path.join(pluginFolder, "server"), {
+        recursive: true,
+        force: true,
+      });
+      remove = true;
+    }
+
+    if (clientIsDirectory && !serverIsDirectory) {
+      fs.rmSync(path.join(pluginFolder, "client"), {
+        recursive: true,
+        force: true,
+      });
+      remove = true;
+    }
+
+    if (remove) {
+      log(`Fixing broken '${pluginId}' folder...`);
+      delete pluginsInFolder[pluginId];
+      delete plugins[pluginId];
+      delete pluginIdInFolderList[pluginIdInFolderList.indexOf(pluginId)];
+
+      fs.rmSync(path.join(pluginFolder, manifestFileName), {
+        recursive: true,
+        force: true,
+      });
+
+      if (isDirectoryEmpty(path.join(pluginFolder))) {
+        fs.rmSync(path.join(pluginFolder), {
+          recursive: true,
+          force: true,
+        });
+      }
+    }
+
+    if (!isDirectory(path.join(pluginFolder, "server")) && !isDirectory(path.join(pluginFolder, "client")) && fs.existsSync(path.join(pluginFolder, manifestFileName))) {
+      fs.rmSync(path.join(pluginFolder, manifestFileName), {
+        recursive: true,
+        force: true,
+      });
+    }
+  });
+
+  // Remove installed plugin if not in directory
+  Object.keys(plugins)
+    .filter((pluginId) => !pluginIdInFolderList.includes(pluginId))
+    .forEach((pluginId) => {
+      log(`Removing plugin '${pluginId}'...`);
+
+      delete plugins[pluginId];
+    });
+
+  pluginIdInFolderList.forEach((pluginId) => {
+    if (!PLUGIN_DEV_MODE && !pluginsInfo[pluginId]) {
+      log(`Removing '${pluginId}' folder...`);
+
+      fs.rmSync(path.join(pluginsFolder, pluginId, "server"), {
+        recursive: true,
+        force: true,
+      });
+      fs.rmSync(path.join(pluginsFolder, pluginId, "client"), {
+        recursive: true,
+        force: true,
+      });
+      fs.rmSync(path.join(pluginsFolder, pluginId, manifestFileName), {
+        recursive: true,
+        force: true,
+      });
+
+      if (isDirectoryEmpty(path.join(pluginsFolder, pluginId))) {
+        fs.rmSync(path.join(pluginsFolder, pluginId), {
+          recursive: true,
+          force: true,
+        });
+      }
+
+      delete plugins[pluginId];
+      return;
+    }
+
     const manifestFile = fs.readFileSync(
-      pluginsFolder + pluginId + "/" + manifestFileName,
+      path.join(pluginsFolder, pluginId, manifestFileName),
       {
         encoding: "utf8",
         flag: "r",
       },
     );
 
+    // Create plugin
     plugins[pluginId] = JSON.parse(manifestFile);
   });
 
-  siteInfo.plugins = plugins;
+  if (!PLUGIN_DEV_MODE) {
+    // Install plugin
+    const notInstalledPlugins = Object.keys(pluginsInfo).filter(
+      (pluginId) => !plugins[pluginId],
+    );
 
-  return siteInfo;
+    for (const pluginId of notInstalledPlugins) {
+      const pluginFolder = path.join(pluginsFolder, pluginId);
+      const manifestFilePath = path.join(pluginFolder, manifestFileName);
+      const pluginManifest = pluginsInfo[pluginId];
+
+      log(`Installing plugin '${pluginId}'...`);
+
+      if (!fs.existsSync(pluginFolder)) {
+        fs.mkdirSync(pluginFolder, { recursive: true });
+      }
+
+      plugins[pluginId] = { ...pluginManifest };
+
+      log(`Downloading...`);
+
+      const file = await downloadPluginUiZip(pluginId);
+
+      await downloadAndExtractZip(file, pluginFolder);
+
+      fs.writeFileSync(
+        manifestFilePath,
+        JSON.stringify(pluginManifest, null, 2),
+      );
+
+      log(`'${pluginId}' successfully installed.`);
+    }
+
+    // Verify plugin files
+    for (const pluginId of Object.keys(plugins)) {
+      const pluginFolder = path.join(pluginsFolder, pluginId);
+
+      const pluginInfoManifest = pluginsInfo[pluginId];
+      let pluginManifest = plugins[pluginId];
+
+      // if files not valid
+      if (
+        pluginManifest.version !== pluginInfoManifest.version ||
+        pluginManifest.uiHash !== pluginInfoManifest.uiHash
+      ) {
+        const manifestFilePath = path.join(pluginFolder, manifestFileName);
+
+        log(`Updating plugin '${pluginId}'.`);
+
+        plugins[pluginId] = pluginInfoManifest;
+        pluginManifest = plugins[pluginId];
+        fs.writeFileSync(
+          manifestFilePath,
+          JSON.stringify(pluginManifest, null, 2),
+        );
+
+        fs.rmSync(path.join(pluginsFolder, pluginId, "server"), {
+          recursive: true,
+          force: true,
+        });
+        fs.rmSync(path.join(pluginsFolder, pluginId, "client"), {
+          recursive: true,
+          force: true,
+        });
+
+        log(`Downloading...`);
+
+        const file = await downloadPluginUiZip(pluginId);
+
+        await downloadAndExtractZip(file, pluginFolder);
+        log(`'${pluginId}' successfully updated.`);
+      }
+    }
+  }
+}
+
+async function preparePlugins(siteInfo) {
+  createPluginsFolder();
+
+  const pluginsInFolder = readPluginsFromFolder();
+
+  await verifyPlugins(pluginsInFolder, siteInfo.plugins);
 }
 
 export async function initializePlugins(siteInfo) {
+  if (!browser) {
+    await preparePlugins(siteInfo);
+  }
+
   const pluginsInfo = siteInfo.plugins;
 
-  if (!browser) {
-    if (!fs.existsSync(pluginsFolder)) {
-      fs.mkdirSync(pluginsFolder, { recursive: true });
-    }
-
-    const readPluginsFolder = fs.readdirSync(pluginsFolder);
-
-    Object.keys(plugins)
-      .filter((pluginId) => !readPluginsFolder.includes(pluginId))
-      .forEach((pluginId) => {
-        log(`Couldn't find plugin '${pluginId}', removing...`);
-
-        delete plugins[pluginId];
-      });
-
-    readPluginsFolder.forEach((pluginId) => {
-      if (!PLUGIN_DEV_MODE) {
-        if (pluginsInfo[pluginId] === undefined) {
-          log(`Couldn't find plugin '${pluginId}', removing...`);
-
-          fs.rmSync(pluginsFolder + pluginId, { recursive: true, force: true });
-
-          delete plugins[pluginId];
-          return;
-        }
-      }
-
-      const manifestFile = fs.readFileSync(
-        pluginsFolder + pluginId + "/" + manifestFileName,
-        {
-          encoding: "utf8",
-          flag: "r",
-        },
-      );
-
-      plugins[pluginId] = JSON.parse(manifestFile);
-    });
-
-    if (!PLUGIN_DEV_MODE) {
-      Object.keys(pluginsInfo)
-        .filter((pluginId) => plugins[pluginId] === undefined)
-        .forEach((pluginId) => {
-          const pluginFolder = pluginsFolder + pluginId;
-          const manifestFilePath = pluginFolder + "/" + manifestFileName;
-          const pluginManifest = pluginsInfo[pluginId];
-
-          log(`Installing plugin '${pluginId}'...`);
-
-          if (!fs.existsSync(pluginFolder)) {
-            fs.mkdirSync(pluginFolder, { recursive: true });
-          }
-
-          fs.writeFileSync(
-            manifestFilePath,
-            JSON.stringify(pluginManifest, null, 2),
-          );
-
-          plugins[pluginId] = {...pluginManifest};
-        });
-    }
-
-    if (!PLUGIN_DEV_MODE) {
-      for (const pluginId of Object.keys(plugins)) {
-        const pluginFolder = pluginsFolder + pluginId;
-
-        const pluginInfoManifest = pluginsInfo[pluginId];
-        let pluginManifest = plugins[pluginId];
-
-        const files = fs.readdirSync(pluginFolder);
-
-        let noHashMatch = false;
-
-        Object.keys(pluginManifest.uiHashes)
-          .filter(
-            (fileName) =>
-              pluginManifest.uiHashes[fileName] !==
-              pluginInfoManifest.uiHashes[fileName],
-          )
-          .forEach((hash) => {
-            noHashMatch = true;
-          });
-
-        if (
-          pluginManifest.version !== pluginInfoManifest.version ||
-          noHashMatch
-        ) {
-          const manifestFilePath = pluginFolder + "/" + manifestFileName;
-
-          log(`Updating plugin '${pluginId}'.`);
-
-          plugins[pluginId] = pluginInfoManifest;
-          pluginManifest = plugins[pluginId];
-          fs.writeFileSync(
-            manifestFilePath,
-            JSON.stringify(pluginManifest, null, 2),
-          );
-
-          files
-            .filter((fileName) => fileName !== manifestFileName)
-            .forEach((fileName) => {
-              fs.rmSync(pluginFolder + "/" + fileName, { force: true });
-            });
-        }
-
-        for (const fileName of Object.keys(pluginManifest.uiHashes)) {
-          const fixedFileName = fileName.substring("plugin-ui/".length);
-          const filePath = pluginFolder + "/" + fixedFileName;
-
-          if (!fs.existsSync(filePath)) {
-            log(`Plugin resource not found: '${filePath}'.`);
-            log(`Downloading...`);
-
-            const file = await ApiUtil.get({
-              path: `/api/plugins/${pluginId}/resources/${fileName}`,
-            });
-
-            fs.writeFileSync(filePath, file);
-          }
-        }
-      }
-    }
-  } else {
+  if (browser) {
     Object.keys(pluginsInfo).forEach((pluginId) => {
       plugins[pluginId] = pluginsInfo[pluginId];
     });
@@ -196,26 +304,27 @@ export async function initializePlugins(siteInfo) {
 async function loadPlugins() {
   for (const pluginId of Object.keys(plugins)) {
     const plugin = plugins[pluginId];
-    const pluginFolder = pluginsFolder + pluginId;
 
     if (browser) {
       plugin.module = await import(
-        /* @vite-ignore */ `${PLUGIN_DEV_MODE ? base + "/dev-api" : API_URL}/plugins/${pluginId}/resources/plugin-ui/client.mjs`
+        /* @vite-ignore */ `${base}/plugins/${pluginId}/resources/plugin-ui/client/client.mjs`
       );
     } else {
-      const path = `${pluginFolder}/server.mjs?${Date.now()}`;
+      const pluginFolder = path.join(pluginsFolder, pluginId);
 
-      const __filename = urlStuff.fileURLToPath(import.meta.url);
+      const mainPath = path.join(pluginFolder, "server", "server.mjs") + `?${Date.now()}`;
 
-      const currentDir = pathStuff.dirname(__filename); // Directory of the current file
-      const targetFile = pathStuff.resolve(currentDir, process.cwd()); // Absolute path of the target file
+      const __filename = url.fileURLToPath(import.meta.url);
 
-      const relativePath = pathStuff.relative(currentDir, targetFile);
-      const levels = relativePath.split(pathStuff.sep).length;
+      const currentDir = path.dirname(__filename); // Directory of the current file
+      const targetFile = path.resolve(currentDir, process.cwd()); // Absolute path of the target file
 
-      const upDirs = '../'.repeat(levels); // Repeating '../' based on the number of levels
+      const relativePath = path.relative(currentDir, targetFile);
+      const levels = relativePath.split(path.sep).length;
 
-      plugin.module = await import(/* @vite-ignore */ upDirs + path);
+      const upDirs = "../".repeat(levels); // Repeating '../' based on the number of levels
+
+      plugin.module = await import(/* @vite-ignore */ upDirs + mainPath);
     }
   }
 
