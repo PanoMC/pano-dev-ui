@@ -17,11 +17,11 @@ export function buildQueryParams(params) {
 }
 
 const ApiUtil = {
-  get({ path, request, csrfToken, token }) {
-    return this.customRequest({ path, request, csrfToken, token });
+  get({ path, request, csrfToken, token, blob }) {
+    return this.customRequest({ path, request, csrfToken, token, blob });
   },
 
-  post({ path, request, body, headers, csrfToken, token }) {
+  post({ path, request, body, headers, csrfToken, token, blob }) {
     return this.customRequest({
       path,
       data: {
@@ -33,10 +33,11 @@ const ApiUtil = {
       request,
       csrfToken,
       token,
+      blob
     });
   },
 
-  put({ path, request, body, headers, csrfToken, token }) {
+  put({ path, request, body, headers, csrfToken, token, blob }) {
     return this.customRequest({
       path,
       data: {
@@ -48,10 +49,11 @@ const ApiUtil = {
       request,
       csrfToken,
       token,
+      blob
     });
   },
 
-  delete({ path, request, headers, csrfToken, token }) {
+  delete({ path, request, headers, csrfToken, token, blob }) {
     return this.customRequest({
       path,
       data: {
@@ -61,10 +63,11 @@ const ApiUtil = {
       request,
       csrfToken,
       token,
+      blob
     });
   },
 
-  async customRequest({ path, data = {}, request, csrfToken, token }) {
+  async customRequest({ path, data = {}, request, csrfToken, token, blob }) {
     if (!csrfToken) {
       let session;
 
@@ -119,7 +122,7 @@ const ApiUtil = {
         : fetch(path, options);
 
     return fetchRequest
-      .then((r) => r.text())
+      .then((r) => blob ? r.blob() : r.text())
       .then((json) => {
         try {
           return JSON.parse(json);
