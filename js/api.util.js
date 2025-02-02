@@ -114,7 +114,7 @@ const ApiUtil = {
       }
     }
 
-    const apiUrl = browser ? "" : API_URL;
+    const apiUrl = import.meta.env.PROD && browser ? "" : API_URL;
 
     path = `${apiUrl}/${path.replace("/api/", "")}`;
 
