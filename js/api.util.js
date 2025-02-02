@@ -114,7 +114,9 @@ const ApiUtil = {
       }
     }
 
-    path = `${API_URL}/${path.replace("/api/", "")}`;
+    const apiUrl = browser ? "" : API_URL;
+
+    path = `${apiUrl}/${path.replace("/api/", "")}`;
 
     const fetchRequest =
       request && request.fetch
