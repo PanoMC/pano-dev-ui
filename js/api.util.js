@@ -114,7 +114,7 @@ const ApiUtil = {
       }
     }
 
-    const apiUrl = import.meta.env.PROD && browser ? "/api" : API_URL;
+    const apiUrl = !API_URL.includes(".panomc.com") && import.meta.env.PROD && browser ? "/api" : API_URL;
 
     path = `${apiUrl}/${path.replace("/api/", "")}`;
 
