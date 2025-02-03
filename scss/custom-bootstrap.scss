@@ -86,8 +86,8 @@ $box-shadow-lg: 0 8px 0 rgba($dark, 0.15);
 
 $font-weight-base: 500;
 $font-weight-normal: 500;
-$font-weight-bold: 500;
-$font-weight-bolder: 500;
+$font-weight-bold: 600;
+$font-weight-bolder: 700;
 $lead-font-weight: 400;
 $font-family-base: "Quicksand", sans-serif;
 
@@ -131,6 +131,9 @@ $alert-border-width: 0;
 
 // Lines
 
+$link-decoration: none;
+$link-hover-decoration: underline;
+
 // Inputs
 
 $input-focus-border-color: $primary;
@@ -169,6 +172,7 @@ $nav-tabs-link-active-bg: $white;
 // Paginations
 
 $pagination-disabled-bg: $body-bg;
+$pagination-border-width: 0;
 
 // Badges
 
