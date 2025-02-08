@@ -3,135 +3,129 @@ import { get } from "svelte/store";
 import { page } from "$app/stores";
 import { browser } from "$app/environment";
 
+// Constants for network error handling
 export const NETWORK_ERROR = "NETWORK_ERROR";
-
 export const networkErrorBody = { result: "error", error: NETWORK_ERROR };
 
+// Function to build query parameters from an object
 export function buildQueryParams(params) {
   const queryString = Object.keys(params)
     .filter(key => params[key])
     .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
     .join('&');
-
-  return queryString === "" ? "": "?" + queryString;
+  return queryString === "" ? "" : "?" + queryString;
 }
 
 const ApiUtil = {
-  get({ path, request, csrfToken, token, blob }) {
-    return this.customRequest({ path, request, csrfToken, token, blob });
+  interceptors: {},
+
+  // GET request
+  async get({ path, request, csrfToken, token, blob, handler }) {
+    return this.customRequest({ path, request, csrfToken, token, blob, handler });
   },
 
-  post({ path, request, body, headers, csrfToken, token, blob }) {
+  // POST request
+  async post({ path, request, body, headers, csrfToken, token, blob, handler }) {
     return this.customRequest({
       path,
-      data: {
-        method: "POST",
-        credentials: "include",
-        body,
-        headers,
-      },
-      request,
-      csrfToken,
-      token,
-      blob
+      data: { method: "POST", credentials: "include", body, headers },
+      request, csrfToken, token, blob, handler
     });
   },
 
-  put({ path, request, body, headers, csrfToken, token, blob }) {
+  // PUT request
+  async put({ path, request, body, headers, csrfToken, token, blob, handler }) {
     return this.customRequest({
       path,
-      data: {
-        method: "PUT",
-        credentials: "include",
-        body,
-        headers,
-      },
-      request,
-      csrfToken,
-      token,
-      blob
+      data: { method: "PUT", credentials: "include", body, headers },
+      request, csrfToken, token, blob, handler
     });
   },
 
-  delete({ path, request, headers, csrfToken, token, blob }) {
+  // DELETE request
+  async delete({ path, request, headers, csrfToken, token, blob, handler }) {
     return this.customRequest({
       path,
-      data: {
-        method: "DELETE",
-        headers,
-      },
-      request,
-      csrfToken,
-      token,
-      blob
+      data: { method: "DELETE", headers },
+      request, csrfToken, token, blob, handler
     });
   },
 
-  async customRequest({ path, data = {}, request, csrfToken, token, blob }) {
+  // Custom request handler
+  async customRequest({ path, data = {}, request, csrfToken, token, blob, handler }) {
+    // Retrieve CSRF token if not provided
     if (!csrfToken) {
       let session;
-
       if (request) {
         const parentData = await request.parent();
-
-        const { session: parentSession } = parentData;
-
-        session = parentSession;
+        session = parentData.session;
       } else if (browser && get(page).data) {
-        const { session: pageSession } = get(page).data;
-
-        session = pageSession;
+        session = get(page).data.session;
       }
-
       csrfToken = session && session.csrfToken;
     }
 
-    const CSRFHeader = {};
+    // Set CSRF header if token is available
+    const CSRFHeader = csrfToken ? { [CSRF_HEADER]: csrfToken } : {};
 
-    if (csrfToken) CSRFHeader[CSRF_HEADER] = csrfToken;
-
+    // Convert body to JSON string if not FormData
     if (!(data.body instanceof FormData)) {
       data.body = JSON.stringify(data.body);
-
-      data.headers = {
-        "Content-Type": "application/json",
-        ...data.headers,
-      };
+      data.headers = { "Content-Type": "application/json", ...data.headers };
     }
 
+    // Set request options
     const options = {
       ...data,
-      headers: csrfToken ? { ...data.headers, ...CSRFHeader } : data.headers,
+      headers: { ...data.headers, ...CSRFHeader },
     };
 
+    // Add Authorization header if token is provided
     if (token) {
       options.headers["Authorization"] = `Bearer ${token}`;
-    } else {
-      const isCredentialsSupported = "credentials" in Request.prototype;
+    } else if ("credentials" in Request.prototype) {
+      options["credentials"] = "include";
+    }
 
-      if (isCredentialsSupported) {
-        options["credentials"] = "include";
+    // Determine API URL
+    const apiUrl = !API_URL.includes(".panomc.com") && import.meta.env.PROD && browser ? "/api" : API_URL;
+    path = `${apiUrl}/${path.replace("/api/", "")}`;
+
+    const bodyHandler = (response) => blob ? response.blob() : response.text()
+    const jsonParseHandler = (json) => {
+      try {
+        return JSON.parse(json);
+      } catch (err) {
+        return json;
       }
     }
 
-    const apiUrl = !API_URL.includes(".panomc.com") && import.meta.env.PROD && browser ? "/api" : API_URL;
+    const requestCall = (rejectHandler) => {
+      // Perform fetch request
+      const fetchMethod = request && request.fetch ? request.fetch(path, options) : fetch(path, options);
 
-    path = `${apiUrl}/${path.replace("/api/", "")}`;
-
-    const fetchRequest =
-      request && request.fetch
-        ? request.fetch(path, options)
-        : fetch(path, options);
-
-    return fetchRequest
-      .then((r) => blob ? r.blob() : r.text())
-      .then((json) => {
-        try {
-          return JSON.parse(json);
-        } catch (err) {
-          return json;
+      const reject = async (err) => {
+        console.log(err)
+        if (rejectHandler) {
+          throw new Error(err);
         }
-      });
+
+        if (!this.interceptors.errorHandler || !handler) {
+          return
+        }
+
+        this.interceptors.errorHandler(requestCall);
+      }
+
+      // Handle response
+      return fetchMethod
+        .then(bodyHandler)
+        .then(jsonParseHandler)
+        .then(async (parsedJson) => handler ? await handler(parsedJson, reject) : parsedJson)
+        .catch(reject);
+    }
+
+    return requestCall()
   },
 };
 
