@@ -87,7 +87,7 @@ const ApiUtil = {
       options["credentials"] = "include";
     }
 
-    if (!browser) {
+    if (!browser || API_URL.includes(".panomc.com")) {
       // Determine API URL
       const apiUrl = !API_URL.includes(".panomc.com") && import.meta.env.PROD && browser ? "/api" : API_URL;
       path = `${apiUrl}/${path.replace("/api/", "")}`;
