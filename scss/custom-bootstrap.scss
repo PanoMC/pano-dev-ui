@@ -2,7 +2,7 @@
 
 $min-contrast-ratio: 2;
 
-$primary: #0a1931;
+$primary: #044389;
 $secondary: #ffc947;
 $danger: #fc6e51;
 $success: #4ecdc4;
@@ -15,9 +15,6 @@ $white: #fff;
 $black: #000;
 $muted: #6c757d;
 $transparent: transparent;
-
-$body-bg: $white;
-$body-color: $dark;
 
 $theme-colors: (
   "transparent": $transparent,
@@ -64,7 +61,6 @@ $secondaries: (
 // SETTINGS
 
 $enable-shadows: true;
-$enable-rounded: true;
 
 // GLOBAL TOKENS
 
@@ -93,7 +89,6 @@ $font-family-base: "Quicksand", sans-serif;
 
 // Headings
 
-$headings-color: $black;
 $headings-font-weight: $font-weight-bolder;
 
 // Hr
@@ -115,15 +110,12 @@ $btn-active-box-shadow: 0;
 
 // Modals
 
-$modal-content-bg: $white;
 $modal-content-border-width: 0;
 $modal-backdrop-opacity: 0.25;
 $modal-content-box-shadow-xs: $box-shadow;
 $modal-content-box-shadow-sm-up: $box-shadow-lg;
 
-// Cards
-
-$card-border-width: 0;
+// Accordions
 
 // Alerts
 
@@ -140,8 +132,6 @@ $input-focus-border-color: $primary;
 
 // Dropdowns
 
-$dropdown-header-color: $black;
-$dropdown-link-color: $primary;
 $dropdown-link-hover-bg: rgba(
   $color: $primary,
   $alpha: 0.25,
@@ -171,7 +161,6 @@ $nav-tabs-link-active-bg: $white;
 
 // Paginations
 
-$pagination-disabled-bg: $body-bg;
 $pagination-border-width: 0;
 
 // Badges
