@@ -87,9 +87,11 @@ const ApiUtil = {
       options["credentials"] = "include";
     }
 
-    // Determine API URL
-    const apiUrl = !API_URL.includes(".panomc.com") && import.meta.env.PROD && browser ? "/api" : API_URL;
-    path = `${apiUrl}/${path.replace("/api/", "")}`;
+    if (!browser) {
+      // Determine API URL
+      const apiUrl = !API_URL.includes(".panomc.com") && import.meta.env.PROD && browser ? "/api" : API_URL;
+      path = `${apiUrl}/${path.replace("/api/", "")}`;
+    }
 
     const bodyHandler = (response) => blob ? response.blob() : response.text()
     const jsonParseHandler = (json) => {
