@@ -2,6 +2,7 @@ import { API_URL, CSRF_HEADER } from "$lib/variables";
 import { get } from "svelte/store";
 import { page } from "$app/stores";
 import { browser } from "$app/environment";
+import { initialized } from "$lib/Store.js";
 
 // Constants for network error handling
 export const NETWORK_ERROR = "NETWORK_ERROR";
@@ -87,9 +88,9 @@ const ApiUtil = {
       options["credentials"] = "include";
     }
 
-    if (!browser || API_URL.includes(".panomc.com")) {
+    if ((request && !get(initialized)) || !browser || API_URL.includes(".panomc.com")) {
       // Determine API URL
-      const apiUrl = !API_URL.includes(".panomc.com") && import.meta.env.PROD && browser ? "/api" : API_URL;
+      const apiUrl = !API_URL.includes(".panomc.com") && import.meta.env.PROD && browser && get(initialized) ? "/api" : API_URL;
       path = `${apiUrl}/${path.replace("/api/", "")}`;
     }
 
