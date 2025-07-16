@@ -3,14 +3,14 @@ function isSemVer(version) {
 }
 
 function parseVersion(version) {
-  version = version.replace(/^v/, ''); // Remove leading 'v'
+  version = version.replace(/^v/, '');
   const [core, pre] = version.split('-');
   const coreParts = core.split('.').map(Number);
   const preParts = pre ? pre.split('.').map(p => isNaN(p) ? p : Number(p)) : [];
   return { coreParts, preParts };
 }
 
-function compareVersions(tags, a, b) {
+function compareVersions(a, b) {
   const va = parseVersion(a);
   const vb = parseVersion(b);
 
@@ -21,10 +21,13 @@ function compareVersions(tags, a, b) {
     if (ai !== bi) return ai - bi;
   }
 
-  const prePriority = tags;
+  const prePriority = ['alpha', 'beta'];
 
-  if (va.preParts.length === 0 && vb.preParts.length > 0) return 1;
-  if (vb.preParts.length === 0 && va.preParts.length > 0) return -1;
+  const isAPre = va.preParts.length > 0;
+  const isBPre = vb.preParts.length > 0;
+
+  if (!isAPre && isBPre) return 1;
+  if (isAPre && !isBPre) return -1;
 
   for (let i = 0; i < Math.max(va.preParts.length, vb.preParts.length); i++) {
     const a = va.preParts[i];
@@ -32,7 +35,9 @@ function compareVersions(tags, a, b) {
     if (a === b) continue;
 
     if (typeof a === 'string' && typeof b === 'string') {
-      return (prePriority.indexOf(a) || 99) - (prePriority.indexOf(b) || 99);
+      const ai = prePriority.indexOf(a);
+      const bi = prePriority.indexOf(b);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
     } else if (typeof a === 'number' && typeof b === 'number') {
       return a - b;
     } else {
@@ -46,5 +51,19 @@ function compareVersions(tags, a, b) {
 export function isPanoVersionCompatible(current, required) {
   if (current === "local-build") return true;
   if (!isSemVer(current) || !isSemVer(required)) return false;
-  return compareVersions(['alpha', 'beta'], current, required) >= 0;
+
+  const currentParsed = parseVersion(current);
+  const requiredParsed = parseVersion(required);
+
+  const coreEqual =
+    JSON.stringify(currentParsed.coreParts) === JSON.stringify(requiredParsed.coreParts);
+
+  const requiredIsPre = requiredParsed.preParts.length > 0;
+
+  // ✅ Sadece required pre değilse, core eşitliği yeterli
+  if (coreEqual && !requiredIsPre) {
+    return true;
+  }
+
+  return compareVersions(current, required) >= 0;
 }
