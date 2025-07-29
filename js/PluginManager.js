@@ -322,7 +322,7 @@ async function loadPlugins() {
       const relativePath = path.relative(currentDir, targetFile);
       const levels = relativePath.split(path.sep).length;
 
-      const upDirs = "../".repeat(levels); // Repeating '../' based on the number of levels
+      const upDirs = `..${path.sep}`.repeat(levels); // Repeating '../' based on the number of levels
 
       let module;
 
