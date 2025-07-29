@@ -324,7 +324,15 @@ async function loadPlugins() {
 
       const upDirs = "../".repeat(levels); // Repeating '../' based on the number of levels
 
-      plugin.module = await import(/* @vite-ignore */ upDirs + mainPath);
+      let module;
+
+      try {
+        module = await import(/* @vite-ignore */ upDirs + mainPath)
+      } catch {
+        module = await import(/* @vite-ignore */ "file://" + path.join(path.resolve(upDirs + mainPath, process.cwd(), mainPath)))
+      }
+
+      plugin.module = module;
     }
   }
 
