@@ -217,7 +217,7 @@ async function verifyPlugins(pluginsInFolder, pluginsInfo) {
         fs.mkdirSync(pluginFolder, { recursive: true });
       }
 
-      plugins[pluginId] = { ...pluginManifest };
+      plugins[pluginId] = structuredClone(pluginManifest);
 
       log(`Downloading...`);
 
@@ -249,7 +249,7 @@ async function verifyPlugins(pluginsInFolder, pluginsInfo) {
 
         log(`Updating plugin '${pluginId}'.`);
 
-        plugins[pluginId] = pluginInfoManifest;
+        plugins[pluginId] = structuredClone(pluginInfoManifest);
         pluginManifest = plugins[pluginId];
         fs.writeFileSync(
           manifestFilePath,
