@@ -4,9 +4,10 @@ $min-contrast-ratio: 2;
 
 $primary: #044389;
 $secondary: #ffc947;
-$danger: #fc6e51;
+$danger: #ED5565;
 $success: #4ecdc4;
 $warning: #967adc;
+$cake: #864118;
 $info: #1e96fc;
 $dark: #0a1931;
 $gray: #ccd1d9;
@@ -25,6 +26,7 @@ $theme-colors: (
   "danger": $danger,
   "success": $success,
   "warning": $warning,
+  "cake": $cake,
   "info": $info,
   "light": $light,
   "dark": $dark,
