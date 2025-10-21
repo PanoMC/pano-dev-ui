@@ -11,6 +11,10 @@ $fa-font-path: "/assets/webfonts";
 
 // Pano UI Styles
 
+[data-bs-theme="dark"] {
+  --bs-body-bg: #0a1931;
+}
+
 $all-colors: map-merge-multiple($primaries);
 
 $utilities: map-merge(
