@@ -47,3 +47,8 @@ $utilities: map-merge(
   outline: none;
   border: none;
 }
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
