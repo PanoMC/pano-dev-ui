@@ -10,10 +10,8 @@ $fa-font-path: "/assets/webfonts";
 @import "bootstrap/scss/utilities";
 
 // Pano UI Styles
+@import "themes";
 
-[data-bs-theme="dark"] {
-  --bs-body-bg: #0a1931;
-}
 
 $all-colors: map-merge-multiple($primaries);
 
