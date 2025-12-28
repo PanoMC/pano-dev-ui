@@ -8,6 +8,7 @@ $fa-font-path: "/assets/webfonts";
 @import "bootstrap/scss/variables";
 @import "bootstrap/scss/mixins";
 @import "bootstrap/scss/utilities";
+@import "themes";
 
 $all-colors: map-merge-multiple($primaries);
 
@@ -19,6 +20,46 @@ $utilities: map-merge($utilities,
     ));
 
 @import "bootstrap/scss/utilities/api";
+
+
+//        Common styles
+
+.animate__animated {
+  --animate-duration: 250ms;
+}
+
+
+// Sidebar & Offcanvas
+
+#sidebar { --bs-offcanvas-width: 256px; } /* mobile offcanvas width */
+
+/* Desktop horizontal */
+@media (min-width: 992px) {
+  /* Make Sidebar visible, sticky and fixed width */
+  .offcanvas-lg {
+    position: sticky;
+    transform: none !important;
+    visibility: visible !important;
+    z-index: auto !important;           /* prevent content override */
+    flex: 0 0 256px;                    /* fix 256px */
+    max-width: 256px;
+  }
+  .offcanvas-backdrop { display: none !important; }
+}
+
+.blocks {
+  background-position:
+    bottom right,
+    bottom left,
+    bottom left;
+  background-image: url("/assets/img/red.svg"), url("/assets/img/yellow.svg"),
+    url("/assets/img/green.svg");
+  background-repeat: no-repeat;
+  background-size:
+    64px 64px,
+    128px 64px,
+    64px 128px;
+}
 
 // Editor
 
@@ -35,4 +76,52 @@ $utilities: map-merge($utilities,
 pre {
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.markdown-renderer img {
+  max-width: 100%;
+}
+
+.markdown-renderer blockquote {
+  border-left: 5px var(--pano-primary) solid;
+  padding-left: 8px;
+}
+
+.markdown-renderer strong {
+  font-weight: bolder;
+}
+
+.markdown-renderer code {
+  background-color: var(--pano-light);
+}
+
+// Scrollbar
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar:horizontal {
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba($color: $light, $alpha: 0.1);
+  border-radius: 8px;
+}
+
+// Read Notification Effect
+
+@keyframes readNotification {
+  0% {
+    background-color: rgba($primary, 0.2);
+  }
+
+  100% {
+    background-color: transparent;
+  }
 }
