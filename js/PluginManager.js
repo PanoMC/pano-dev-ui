@@ -1,6 +1,7 @@
 import fs from "fs";
 
 import { browser } from "$app/environment";
+import { writable, get } from "svelte/store";
 import ApiUtil from "$lib/api.util.js";
 import { base } from "$app/paths";
 
@@ -16,7 +17,7 @@ if (!browser) {
   admZip = admZipStuff.default;
 }
 
-const plugins = {};
+const plugins = writable({});
 
 const pluginsFolder = "plugins";
 const manifestFileName = "manifest.json";
@@ -134,7 +135,7 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
     if (remove) {
       log(`Fixing broken '${pluginId}' folder...`);
       delete pluginsInFolder[pluginId];
-      delete plugins[pluginId];
+      plugins.update(p => { delete p[pluginId]; return p; });
       delete pluginIdInFolderList[pluginIdInFolderList.indexOf(pluginId)];
 
       fs.rmSync(path.join(pluginFolder, manifestFileName), {
@@ -159,12 +160,12 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
   });
 
   // Remove installed plugin if not in directory
-  Object.keys(plugins)
+  Object.keys(get(plugins))
     .filter((pluginId) => !pluginIdInFolderList.includes(pluginId))
     .forEach((pluginId) => {
       log(`Removing plugin '${pluginId}'...`);
 
-      delete plugins[pluginId];
+      plugins.update(p => { delete p[pluginId]; return p; });
     });
 
   pluginIdInFolderList.forEach((pluginId) => {
@@ -191,7 +192,7 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
         });
       }
 
-      delete plugins[pluginId];
+      plugins.update(p => { delete p[pluginId]; return p; });
       return;
     }
 
@@ -205,14 +206,14 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
       );
 
       // Create plugin
-      plugins[pluginId] = JSON.parse(manifestFile);
+      plugins.update(p => { p[pluginId] = JSON.parse(manifestFile); return p; });
     } catch (_) {
       if (siteInfo.developmentMode) {
         // Create plugin
-        plugins[pluginId] = {
+        plugins.update(p => { p[pluginId] = {
           version: "dev-build",
           uiHash: "dev-build",
-        };
+        }; return p; });
       }
     }
   });
@@ -220,7 +221,7 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
   if (!siteInfo.developmentMode) {
     // Install plugin
     const notInstalledPlugins = Object.keys(pluginsInfo).filter(
-      (pluginId) => !plugins[pluginId],
+      (pluginId) => !get(plugins)[pluginId],
     );
 
     for (const pluginId of notInstalledPlugins) {
@@ -234,7 +235,7 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
         fs.mkdirSync(pluginFolder, { recursive: true });
       }
 
-      plugins[pluginId] = structuredClone(pluginManifest);
+      plugins.update(p => { p[pluginId] = structuredClone(pluginManifest); return p; });
 
       log(`Downloading...`);
 
@@ -251,11 +252,11 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
     }
 
     // Verify plugin files
-    for (const pluginId of Object.keys(plugins)) {
+    for (const pluginId of Object.keys(get(plugins))) {
       const pluginFolder = path.join(pluginsFolder, pluginId);
 
       const pluginInfoManifest = pluginsInfo[pluginId];
-      let pluginManifest = plugins[pluginId];
+      let pluginManifest = get(plugins)[pluginId];
 
       // if files not valid
       if (
@@ -266,7 +267,7 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
 
         log(`Updating plugin '${pluginId}'.`);
 
-        plugins[pluginId] = structuredClone(pluginInfoManifest);
+        plugins.update(p => { p[pluginId] = structuredClone(pluginInfoManifest); return p; });
         pluginManifest = plugins[pluginId];
         fs.writeFileSync(
           manifestFilePath,
@@ -308,19 +309,17 @@ export async function initializePlugins(siteInfo) {
 
   if (browser) {
     Object.keys(pluginsInfo).forEach((pluginId) => {
-      plugins[pluginId] = pluginsInfo[pluginId];
+      plugins.update(p => { p[pluginId] = pluginsInfo[pluginId]; return p; });
     });
   }
 
   await loadPlugins();
   await enablePlugins();
-
-
 }
 
 async function loadPlugins() {
-  for (const pluginId of Object.keys(plugins)) {
-    const plugin = plugins[pluginId];
+  for (const pluginId of Object.keys(get(plugins))) {
+    const plugin = get(plugins)[pluginId];
 
     if (browser) {
       plugin.module = await import(
@@ -353,8 +352,8 @@ async function loadPlugins() {
     }
   }
 
-  for (const pluginId of Object.keys(plugins)) {
-    const plugin = plugins[pluginId];
+  for (const pluginId of Object.keys(get(plugins))) {
+    const plugin = get(plugins)[pluginId];
 
     if (plugin.module.onLoad !== undefined) {
       await plugin.module.onLoad(pano);
@@ -363,8 +362,8 @@ async function loadPlugins() {
 }
 
 async function enablePlugins() {
-  for (const pluginId of Object.keys(plugins)) {
-    const plugin = plugins[pluginId];
+  for (const pluginId of Object.keys(get(plugins))) {
+    const plugin = get(plugins)[pluginId];
 
     if (plugin.module.onEnable !== undefined) {
       await plugin.module.onEnable(pano);
