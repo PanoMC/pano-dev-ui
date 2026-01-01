@@ -5,6 +5,10 @@ import { writable, get } from "svelte/store";
 import ApiUtil from "$lib/api.util.js";
 import { base } from "$app/paths";
 
+import { init as initPluginAPI, panoApiClient, panoApiServer } from "$lib/PluginAPI";
+
+export let registeredPages = {};
+
 let path, url, admZip;
 
 if (!browser) {
@@ -26,10 +30,6 @@ const pluginUiZipFileName = "plugin-ui.zip";
 function log(message) {
   console.log(`[Plugin Manager] ${message}`);
 }
-
-const pano = {
-  isPanel: base === "/panel",
-};
 
 function createPluginsFolder() {
   if (!fs.existsSync(pluginsFolder)) {
@@ -307,6 +307,10 @@ export async function preparePlugins(siteInfo) {
 export async function initializePlugins(siteInfo) {
   const pluginsInfo = siteInfo.plugins;
 
+  registeredPages = {};
+
+  await initPluginAPI();
+
   if (browser) {
     Object.keys(pluginsInfo).forEach((pluginId) => {
       plugins.update(p => { p[pluginId] = pluginsInfo[pluginId]; return p; });
@@ -356,7 +360,7 @@ async function loadPlugins() {
     const plugin = get(plugins)[pluginId];
 
     if (plugin.module.onLoad !== undefined) {
-      await plugin.module.onLoad(pano);
+      await plugin.module.onLoad(browser ? panoApiClient : panoApiServer);
     }
   }
 }
@@ -366,7 +370,7 @@ async function enablePlugins() {
     const plugin = get(plugins)[pluginId];
 
     if (plugin.module.onEnable !== undefined) {
-      await plugin.module.onEnable(pano);
+      await plugin.module.onEnable();
     }
   }
 }
