@@ -2,7 +2,6 @@ import fs from "fs";
 
 import { browser } from "$app/environment";
 import ApiUtil from "$lib/api.util.js";
-import { API_URL, PLUGIN_DEV_MODE } from "$lib/variables.js";
 import { base } from "$app/paths";
 
 let path, url, admZip;
@@ -62,7 +61,7 @@ async function downloadAndExtractZip(file, outputDir) {
   zip.extractAllTo(outputDir, true);
 }
 
-function readPluginsFromFolder() {
+function readPluginsFromFolder(siteInfo) {
   const readPluginsFolder = fs.readdirSync(pluginsFolder);
 
   const plugins = {};
@@ -81,7 +80,7 @@ function readPluginsFromFolder() {
 
         plugins[pluginId] = JSON.parse(manifestFile);
       } catch (_) {
-        if (PLUGIN_DEV_MODE) {
+        if (siteInfo.developmentMode) {
           plugins[pluginId] = {
             version: "dev-build",
             uiHash: "dev-build"
@@ -100,7 +99,8 @@ async function downloadPluginUiZip(pluginId) {
   });
 }
 
-async function verifyPlugins(pluginsInFolder, pluginsInfo) {
+async function verifyPlugins(pluginsInFolder, siteInfo) {
+  const pluginsInfo = siteInfo.plugins;
   const pluginIdInFolderList = Object.keys(pluginsInFolder);
 
   // Fix broken plugin folder, if it doesn't contain server or client
@@ -168,7 +168,7 @@ async function verifyPlugins(pluginsInFolder, pluginsInfo) {
     });
 
   pluginIdInFolderList.forEach((pluginId) => {
-    if (!PLUGIN_DEV_MODE && !pluginsInfo[pluginId]) {
+    if (!siteInfo.developmentMode && !pluginsInfo[pluginId]) {
       log(`Removing '${pluginId}' folder...`);
 
       fs.rmSync(path.join(pluginsFolder, pluginId, "server"), {
@@ -207,7 +207,7 @@ async function verifyPlugins(pluginsInFolder, pluginsInfo) {
       // Create plugin
       plugins[pluginId] = JSON.parse(manifestFile);
     } catch (_) {
-      if (PLUGIN_DEV_MODE) {
+      if (siteInfo.developmentMode) {
         // Create plugin
         plugins[pluginId] = {
           version: "dev-build",
@@ -217,7 +217,7 @@ async function verifyPlugins(pluginsInFolder, pluginsInfo) {
     }
   });
 
-  if (!PLUGIN_DEV_MODE) {
+  if (!siteInfo.developmentMode) {
     // Install plugin
     const notInstalledPlugins = Object.keys(pluginsInfo).filter(
       (pluginId) => !plugins[pluginId],
@@ -296,9 +296,9 @@ async function verifyPlugins(pluginsInFolder, pluginsInfo) {
 export async function preparePlugins(siteInfo) {
   createPluginsFolder();
 
-  const pluginsInFolder = readPluginsFromFolder();
+  const pluginsInFolder = readPluginsFromFolder(siteInfo);
 
-  await verifyPlugins(pluginsInFolder, siteInfo.plugins);
+  await verifyPlugins(pluginsInFolder, siteInfo);
 
   siteInfo.plugins = {...siteInfo.plugins, ...pluginsInFolder};
 }

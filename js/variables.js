@@ -13,9 +13,6 @@ export const JWT_COOKIE_NAME = "auth_token";
 
 export const CSRF_HEADER = "X-CSRF-Token";
 
-export const PLUGIN_DEV_MODE =
-  import.meta.env.VITE_PLUGIN_DEV_MODE?.toLowerCase() === "true";
-
 export function updateApiUrl(apiUrl) {
   API_URL = apiUrl
 }
