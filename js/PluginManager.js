@@ -80,7 +80,14 @@ function readPluginsFromFolder() {
         );
 
         plugins[pluginId] = JSON.parse(manifestFile);
-      } catch (_) {}
+      } catch (_) {
+        if (PLUGIN_DEV_MODE) {
+          plugins[pluginId] = {
+            version: "dev-build",
+            uiHash: "dev-build"
+          }
+        }
+      }
     });
 
   return plugins;
@@ -188,16 +195,26 @@ async function verifyPlugins(pluginsInFolder, pluginsInfo) {
       return;
     }
 
-    const manifestFile = fs.readFileSync(
-      path.join(pluginsFolder, pluginId, manifestFileName),
-      {
-        encoding: "utf8",
-        flag: "r",
-      },
-    );
+    try {
+      const manifestFile = fs.readFileSync(
+        path.join(pluginsFolder, pluginId, manifestFileName),
+        {
+          encoding: "utf8",
+          flag: "r",
+        },
+      );
 
-    // Create plugin
-    plugins[pluginId] = JSON.parse(manifestFile);
+      // Create plugin
+      plugins[pluginId] = JSON.parse(manifestFile);
+    } catch (_) {
+      if (PLUGIN_DEV_MODE) {
+        // Create plugin
+        plugins[pluginId] = {
+          version: "dev-build",
+          uiHash: "dev-build",
+        };
+      }
+    }
   });
 
   if (!PLUGIN_DEV_MODE) {
@@ -276,19 +293,17 @@ async function verifyPlugins(pluginsInFolder, pluginsInfo) {
   }
 }
 
-async function preparePlugins(siteInfo) {
+export async function preparePlugins(siteInfo) {
   createPluginsFolder();
 
   const pluginsInFolder = readPluginsFromFolder();
 
   await verifyPlugins(pluginsInFolder, siteInfo.plugins);
+
+  siteInfo.plugins = {...siteInfo.plugins, ...pluginsInFolder};
 }
 
 export async function initializePlugins(siteInfo) {
-  if (!browser) {
-    await preparePlugins(siteInfo);
-  }
-
   const pluginsInfo = siteInfo.plugins;
 
   if (browser) {
@@ -299,6 +314,8 @@ export async function initializePlugins(siteInfo) {
 
   await loadPlugins();
   await enablePlugins();
+
+
 }
 
 async function loadPlugins() {
