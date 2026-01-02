@@ -1,0 +1,17 @@
+{
+  "branches": [
+    {
+      "name": "dev",
+      "prerelease": true
+    },
+    {
+      "name": "master"
+    }
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/npm"
+  ],
+  "repositoryUrl": "https://github.com/PanoMC/sdk.git"
+}
