@@ -2,6 +2,9 @@
   "name": "@panomc/sdk",
   "version": "0.0.0-development",
   "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "files": [
     "dist"
