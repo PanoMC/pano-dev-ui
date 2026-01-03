@@ -1,6 +1,10 @@
 {
   "name": "@panomc/sdk",
   "version": "0.0.0-development",
+  "author": "PanoMC",
+  "repository": {
+    "url": "https://github.com/PanoMC/sdk"
+  },
   "publishConfig": {
     "access": "public"
   },
