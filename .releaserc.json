@@ -17,10 +17,6 @@
       {
         "assets": [
           {
-            "path": "*.zip",
-            "label": false
-          },
-          {
             "path": "LICENSE",
             "label": false
           }

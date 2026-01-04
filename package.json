@@ -10,18 +10,16 @@
   },
   "type": "module",
   "files": [
-    "dist"
+    "src"
   ],
-  "main": "dist/index.js",
-  "module": "dist/index.js",
+  "svelte": "./src/index.js",
   "exports": {
     ".": {
-      "import": "./dist/index.js"
+      "svelte": "./src/index.js",
+      "default": "./src/index.js"
     }
   },
-  "scripts": {
-    "build": "vite build"
-  },
+  "scripts": {},
   "peerDependencies": {
     "svelte": "^5.46.1"
   },

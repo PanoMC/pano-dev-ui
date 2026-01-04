@@ -36,12 +36,6 @@ jobs:
       - name: Install
         run: bun install
 
-      - name: Build
-        run: bun run build
-
-      - name: Zip Build
-        run: cd dist && zip -r ../pano-sdk.zip . && cd ..
-
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}
