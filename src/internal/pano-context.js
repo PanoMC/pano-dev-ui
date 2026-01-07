@@ -10,6 +10,13 @@ function getStore() {
   return globalThis[GLOBAL_KEY];
 }
 
+/**
+ * @typedef {import('../types.js').Pano} Pano
+ */
+
+/**
+ * @param {Partial<Pano>} partial
+ */
 export function setPanoContext(partial) {
   const store = getStore();
 
@@ -29,6 +36,9 @@ export function setPanoContext(partial) {
   });
 }
 
+/**
+ * @returns {{ context: Pano, subscribe: (fn: (ctx: Pano) => void) => () => void }}
+ */
 export function getPanoContext() {
   const store = getStore();
 
