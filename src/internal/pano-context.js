@@ -1,4 +1,4 @@
-const GLOBAL_KEY = "__PANO_CONTEXT__";
+const GLOBAL_KEY = '__PANO_CONTEXT__';
 
 function getStore() {
   if (!globalThis[GLOBAL_KEY]) {
@@ -20,8 +20,8 @@ function getStore() {
 export function setPanoContext(partial) {
   const store = getStore();
 
-  if (typeof partial !== "object" || partial === null) {
-    console.warn("[PanoSDK] setPanoContext expects an object");
+  if (typeof partial !== 'object' || partial === null) {
+    console.warn('[PanoSDK] setPanoContext expects an object');
     return;
   }
 
@@ -31,7 +31,7 @@ export function setPanoContext(partial) {
     try {
       fn(store.context);
     } catch (e) {
-      console.error("[PanoSDK] listener error", e);
+      console.error('[PanoSDK] listener error', e);
     }
   });
 }

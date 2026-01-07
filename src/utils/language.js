@@ -1,4 +1,4 @@
-import { getPanoContext } from "../internal/index.js";
+import { getPanoContext } from '../internal/index.js';
 
 const panoContext = getPanoContext();
 const languageStuff = panoContext.context.utils.language;
@@ -22,5 +22,5 @@ export {
   loadLanguage,
   changeLanguage,
   getLanguageByLocale,
-  _
+  _,
 };

@@ -1,21 +1,21 @@
-import fs from "fs";
+import fs from 'fs';
 
-import { browser } from "$app/environment";
-import { writable, get } from "svelte/store";
-import ApiUtil from "$lib/api.util.js";
-import { base } from "$app/paths";
+import { browser } from '$app/environment';
+import { writable, get } from 'svelte/store';
+import ApiUtil from '$lib/api.util.js';
+import { base } from '$app/paths';
 
-import { init as initPluginAPI, panoApiClient, panoApiServer } from "$lib/PluginAPI.js";
-import { PanoPlugin } from "@panomc/sdk";
+import { init as initPluginAPI, panoApiClient, panoApiServer } from '$lib/PluginAPI.js';
+import { PanoPlugin } from '@panomc/sdk';
 
 export let registeredPages = {};
 
 let path, url, admZip;
 
 if (!browser) {
-  const pathStuff = await import("path");
-  const urlStuff = await import("url");
-  const admZipStuff = await import("adm-zip");
+  const pathStuff = await import('path');
+  const urlStuff = await import('url');
+  const admZipStuff = await import('adm-zip');
 
   path = pathStuff;
   url = urlStuff;
@@ -24,9 +24,9 @@ if (!browser) {
 
 const plugins = writable({});
 
-const pluginsFolder = "plugins";
-const manifestFileName = "manifest.json";
-const pluginUiZipFileName = "plugin-ui.zip";
+const pluginsFolder = 'plugins';
+const manifestFileName = 'manifest.json';
+const pluginUiZipFileName = 'plugin-ui.zip';
 
 function log(message) {
   console.log(`[Plugin Manager] ${message}`);
@@ -72,21 +72,18 @@ function readPluginsFromFolder(siteInfo) {
     .filter((pluginId) => isDirectory(path.join(pluginsFolder, pluginId)))
     .forEach((pluginId) => {
       try {
-        const manifestFile = fs.readFileSync(
-          path.join(pluginsFolder, pluginId, manifestFileName),
-          {
-            encoding: "utf8",
-            flag: "r",
-          },
-        );
+        const manifestFile = fs.readFileSync(path.join(pluginsFolder, pluginId, manifestFileName), {
+          encoding: 'utf8',
+          flag: 'r',
+        });
 
         plugins[pluginId] = JSON.parse(manifestFile);
       } catch (_) {
         if (siteInfo.developmentMode) {
           plugins[pluginId] = {
-            version: "dev-build",
-            uiHash: "dev-build"
-          }
+            version: 'dev-build',
+            uiHash: 'dev-build',
+          };
         }
       }
     });
@@ -107,18 +104,14 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
 
   // Fix broken plugin folder, if it doesn't contain server or client
   pluginIdInFolderList.forEach((pluginId) => {
-    const pluginFolder = path.join(pluginsFolder, pluginId)
-    const serverIsDirectory = isDirectory(
-      path.join(pluginFolder, "server"),
-    );
-    const clientIsDirectory = isDirectory(
-      path.join(pluginFolder, "client"),
-    );
+    const pluginFolder = path.join(pluginsFolder, pluginId);
+    const serverIsDirectory = isDirectory(path.join(pluginFolder, 'server'));
+    const clientIsDirectory = isDirectory(path.join(pluginFolder, 'client'));
 
     let remove;
 
     if (serverIsDirectory && !clientIsDirectory) {
-      fs.rmSync(path.join(pluginFolder, "server"), {
+      fs.rmSync(path.join(pluginFolder, 'server'), {
         recursive: true,
         force: true,
       });
@@ -126,7 +119,7 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
     }
 
     if (clientIsDirectory && !serverIsDirectory) {
-      fs.rmSync(path.join(pluginFolder, "client"), {
+      fs.rmSync(path.join(pluginFolder, 'client'), {
         recursive: true,
         force: true,
       });
@@ -136,7 +129,10 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
     if (remove) {
       log(`Fixing broken '${pluginId}' folder...`);
       delete pluginsInFolder[pluginId];
-      plugins.update(p => { delete p[pluginId]; return p; });
+      plugins.update((p) => {
+        delete p[pluginId];
+        return p;
+      });
       delete pluginIdInFolderList[pluginIdInFolderList.indexOf(pluginId)];
 
       fs.rmSync(path.join(pluginFolder, manifestFileName), {
@@ -152,7 +148,11 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
       }
     }
 
-    if (!isDirectory(path.join(pluginFolder, "server")) && !isDirectory(path.join(pluginFolder, "client")) && fs.existsSync(path.join(pluginFolder, manifestFileName))) {
+    if (
+      !isDirectory(path.join(pluginFolder, 'server')) &&
+      !isDirectory(path.join(pluginFolder, 'client')) &&
+      fs.existsSync(path.join(pluginFolder, manifestFileName))
+    ) {
       fs.rmSync(path.join(pluginFolder, manifestFileName), {
         recursive: true,
         force: true,
@@ -166,18 +166,21 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
     .forEach((pluginId) => {
       log(`Removing plugin '${pluginId}'...`);
 
-      plugins.update(p => { delete p[pluginId]; return p; });
+      plugins.update((p) => {
+        delete p[pluginId];
+        return p;
+      });
     });
 
   pluginIdInFolderList.forEach((pluginId) => {
     if (!siteInfo.developmentMode && !pluginsInfo[pluginId]) {
       log(`Removing '${pluginId}' folder...`);
 
-      fs.rmSync(path.join(pluginsFolder, pluginId, "server"), {
+      fs.rmSync(path.join(pluginsFolder, pluginId, 'server'), {
         recursive: true,
         force: true,
       });
-      fs.rmSync(path.join(pluginsFolder, pluginId, "client"), {
+      fs.rmSync(path.join(pluginsFolder, pluginId, 'client'), {
         recursive: true,
         force: true,
       });
@@ -193,29 +196,33 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
         });
       }
 
-      plugins.update(p => { delete p[pluginId]; return p; });
+      plugins.update((p) => {
+        delete p[pluginId];
+        return p;
+      });
       return;
     }
 
     try {
-      const manifestFile = fs.readFileSync(
-        path.join(pluginsFolder, pluginId, manifestFileName),
-        {
-          encoding: "utf8",
-          flag: "r",
-        },
-      );
+      const manifestFile = fs.readFileSync(path.join(pluginsFolder, pluginId, manifestFileName), {
+        encoding: 'utf8',
+        flag: 'r',
+      });
 
       // Create plugin
-      plugins.update(p => { p[pluginId] = JSON.parse(manifestFile); return p; });
+      plugins.update((p) => {
+        p[pluginId] = JSON.parse(manifestFile);
+        return p;
+      });
     } catch (_) {
       if (siteInfo.developmentMode) {
         // Create plugin
-        plugins.update(p => {
+        plugins.update((p) => {
           p[pluginId] = {
-            version: "dev-build",
-            uiHash: "dev-build",
-          }; return p;
+            version: 'dev-build',
+            uiHash: 'dev-build',
+          };
+          return p;
         });
       }
     }
@@ -238,7 +245,10 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
         fs.mkdirSync(pluginFolder, { recursive: true });
       }
 
-      plugins.update(p => { p[pluginId] = structuredClone(pluginManifest); return p; });
+      plugins.update((p) => {
+        p[pluginId] = structuredClone(pluginManifest);
+        return p;
+      });
 
       log(`Downloading...`);
 
@@ -246,10 +256,7 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
 
       await downloadAndExtractZip(file, pluginFolder);
 
-      fs.writeFileSync(
-        manifestFilePath,
-        JSON.stringify(pluginManifest, null, 2),
-      );
+      fs.writeFileSync(manifestFilePath, JSON.stringify(pluginManifest, null, 2));
 
       log(`'${pluginId}' successfully installed.`);
     }
@@ -270,18 +277,18 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
 
         log(`Updating plugin '${pluginId}'.`);
 
-        plugins.update(p => { p[pluginId] = structuredClone(pluginInfoManifest); return p; });
+        plugins.update((p) => {
+          p[pluginId] = structuredClone(pluginInfoManifest);
+          return p;
+        });
         pluginManifest = plugins[pluginId];
-        fs.writeFileSync(
-          manifestFilePath,
-          JSON.stringify(pluginManifest, null, 2),
-        );
+        fs.writeFileSync(manifestFilePath, JSON.stringify(pluginManifest, null, 2));
 
-        fs.rmSync(path.join(pluginsFolder, pluginId, "server"), {
+        fs.rmSync(path.join(pluginsFolder, pluginId, 'server'), {
           recursive: true,
           force: true,
         });
-        fs.rmSync(path.join(pluginsFolder, pluginId, "client"), {
+        fs.rmSync(path.join(pluginsFolder, pluginId, 'client'), {
           recursive: true,
           force: true,
         });
@@ -316,7 +323,10 @@ export async function initializePlugins(siteInfo) {
 
   if (browser) {
     Object.keys(pluginsInfo).forEach((pluginId) => {
-      plugins.update(p => { p[pluginId] = pluginsInfo[pluginId]; return p; });
+      plugins.update((p) => {
+        p[pluginId] = pluginsInfo[pluginId];
+        return p;
+      });
     });
   }
 
@@ -334,7 +344,7 @@ async function loadPlugins() {
     } else {
       const pluginFolder = path.join(pluginsFolder, pluginId);
 
-      const mainPath = path.join(pluginFolder, "server", "server.mjs") + `?${Date.now()}`;
+      const mainPath = path.join(pluginFolder, 'server', 'server.mjs') + `?${Date.now()}`;
 
       const __filename = url.fileURLToPath(import.meta.url);
 
@@ -349,9 +359,12 @@ async function loadPlugins() {
       let module;
 
       try {
-        module = await import(/* @vite-ignore */ upDirs + mainPath)
+        module = await import(/* @vite-ignore */ upDirs + mainPath);
       } catch {
-        module = await import(/* @vite-ignore */ "file://" + path.join(path.resolve(upDirs + mainPath, process.cwd(), mainPath)))
+        module = await import(
+          /* @vite-ignore */ 'file://' +
+            path.join(path.resolve(upDirs + mainPath, process.cwd(), mainPath))
+        );
       }
 
       plugin.module = module;
@@ -366,7 +379,7 @@ async function loadPlugins() {
     const PluginClass = plugin.module.default;
 
     if (PluginClass instanceof PanoPlugin) {
-      throw new Error("Plugin must extend PanoPlugin");
+      throw new Error('Plugin must extend PanoPlugin');
     }
 
     const instance = new PluginClass({ pluginId });

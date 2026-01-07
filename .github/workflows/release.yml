@@ -2,7 +2,7 @@ name: Pano UI SDK Release
 
 on:
   push:
-    branches: [ "master", "dev" ]
+    branches: ['master', 'dev']
 
 permissions:
   contents: read
@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive          # Fetch submodules
+          submodules: recursive # Fetch submodules
           fetch-depth: 0
           token: ${{ secrets.TOKEN_GITHUB }}
 

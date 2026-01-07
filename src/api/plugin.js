@@ -1,4 +1,4 @@
-import { createPluginContext } from "./plugin-context.js";
+import { createPluginContext } from './plugin-context.js';
 
 /**
  * @typedef {import('../types.js').Pano} Pano
@@ -19,7 +19,7 @@ export class PanoPlugin {
 
   constructor({ pluginId, scope } = {}) {
     if (!pluginId) {
-      throw new Error("[PanoPlugin] pluginId is required");
+      throw new Error('[PanoPlugin] pluginId is required');
     }
 
     // plugin-scoped context
@@ -29,11 +29,11 @@ export class PanoPlugin {
     this._unsubscribers = [];
   }
 
-  /** 
-   * @param {Pano} pano 
+  /**
+   * @param {Pano} pano
    */
-  onLoad(pano) { }
-  onUnload() { }
+  onLoad(pano) {}
+  onUnload() {}
 
   /** plugin context helper */
   setContext(partial) {

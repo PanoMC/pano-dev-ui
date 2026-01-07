@@ -1,7 +1,7 @@
-import { getPanoContext } from "../internal/index.js";
+import { getPanoContext } from '../internal/index.js';
 
-const panoContext = getPanoContext()
-const components = panoContext.context.components
+const panoContext = getPanoContext();
+const components = panoContext.context.components;
 
 export const PageActions = components.PageActions;
 export const PageLoader = components.PageLoader;

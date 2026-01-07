@@ -37,4 +37,4 @@
  * @property {function(): void} [destroy]
  */
 
-export { }
+export {};

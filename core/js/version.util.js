@@ -6,7 +6,7 @@ function parseVersion(version) {
   version = version.replace(/^v/, '');
   const [core, pre] = version.split('-');
   const coreParts = core.split('.').map(Number);
-  const preParts = pre ? pre.split('.').map(p => isNaN(p) ? p : Number(p)) : [];
+  const preParts = pre ? pre.split('.').map((p) => (isNaN(p) ? p : Number(p))) : [];
   return { coreParts, preParts };
 }
 
@@ -49,7 +49,7 @@ function compareVersions(a, b) {
 }
 
 export function isPanoVersionCompatible(current, required) {
-  if (current === "local-build") return true;
+  if (current === 'local-build') return true;
   if (!isSemVer(current) || !isSemVer(required)) return false;
 
   const currentParsed = parseVersion(current);

@@ -1,4 +1,4 @@
-import { getPanoContext } from "../internal/index.js";
+import { getPanoContext } from '../internal/index.js';
 
 const panoContext = getPanoContext();
 const apiStuff = panoContext.context.utils.api;
@@ -11,4 +11,4 @@ const buildQueryParams = apiStuff.buildQueryParams;
 
 export { ApiUtil, NETWORK_ERROR, networkErrorBody, buildQueryParams };
 
-export default ApiUtil
+export default ApiUtil;

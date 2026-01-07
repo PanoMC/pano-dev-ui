@@ -1,9 +1,8 @@
-import tippy from "tippy.js";
-import { page } from "$app/stores";
+import tippy from 'tippy.js';
+import { page } from '$app/stores';
 
 function setTooltip(element, [value, options]) {
-  const instance =
-    typeof element._tippy === "undefined" ? tippy(element) : element._tippy;
+  const instance = typeof element._tippy === 'undefined' ? tippy(element) : element._tippy;
 
   instance.setContent(value);
   instance.setProps(options);
@@ -19,13 +18,12 @@ export default function tooltip(element, properties) {
   let unsubscribePage;
 
   if (value) {
-    if (typeof options === "undefined") options = {};
+    if (typeof options === 'undefined') options = {};
 
     setTooltip(element, [value, options]);
 
     unsubscribePage = page.subscribe(() => {
-      const instance =
-        typeof element._tippy === "undefined" ? tippy(element) : element._tippy;
+      const instance = typeof element._tippy === 'undefined' ? tippy(element) : element._tippy;
 
       instance.hide();
     });
@@ -40,24 +38,20 @@ export default function tooltip(element, properties) {
       let [value, options] = updatedValue;
 
       if (!value) {
-        const instance =
-          typeof element._tippy === "undefined"
-            ? tippy(element)
-            : element._tippy;
+        const instance = typeof element._tippy === 'undefined' ? tippy(element) : element._tippy;
 
         instance.destroy();
 
         return;
       }
 
-      if (typeof options === "undefined") options = {};
+      if (typeof options === 'undefined') options = {};
 
       setTooltip(element, [value, options]);
     },
 
     onDestroy() {
-      const instance =
-        typeof element._tippy === "undefined" ? tippy(element) : element._tippy;
+      const instance = typeof element._tippy === 'undefined' ? tippy(element) : element._tippy;
 
       instance.destroy();
       if (unsubscribePage) {

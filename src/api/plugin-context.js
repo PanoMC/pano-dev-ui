@@ -1,4 +1,4 @@
-const GLOBAL_KEY = "__PANO_PLUGIN_CONTEXTS__";
+const GLOBAL_KEY = '__PANO_PLUGIN_CONTEXTS__';
 
 function getStore() {
   if (!globalThis[GLOBAL_KEY]) {
@@ -9,7 +9,7 @@ function getStore() {
 
 export function createPluginContext(pluginId) {
   if (!pluginId) {
-    throw new Error("[PanoSDK] pluginId is required");
+    throw new Error('[PanoSDK] pluginId is required');
   }
 
   const store = getStore();
@@ -27,7 +27,7 @@ export function createPluginContext(pluginId) {
     context: pluginStore.context,
 
     set(partial) {
-      if (typeof partial !== "object" || partial === null) return;
+      if (typeof partial !== 'object' || partial === null) return;
 
       Object.assign(pluginStore.context, partial);
 
