@@ -11,6 +11,7 @@ const getAcceptedLanguage = languageStuff.getAcceptedLanguage;
 const loadLanguage = languageStuff.loadLanguage;
 const changeLanguage = languageStuff.changeLanguage;
 const getLanguageByLocale = languageStuff.getLanguageByLocale;
+const _ = languageStuff._;
 
 export {
   languageLoading,
@@ -21,4 +22,5 @@ export {
   loadLanguage,
   changeLanguage,
   getLanguageByLocale,
+  _
 };
