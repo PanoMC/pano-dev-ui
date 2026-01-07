@@ -16,3 +16,4 @@ export const CardHeader = components.CardHeader;
 export const CardMenu = components.CardMenu;
 export const CardMenuItem = components.CardMenuItem;
 export const Date = components.Date;
+export const NoContent = components.NoContent;
