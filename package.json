@@ -5,27 +5,57 @@
   "repository": {
     "url": "https://github.com/PanoMC/sdk"
   },
-  "publishConfig": {
-    "access": "public"
+  "devDependencies": {
+    "svelte": "^5.46.1"
   },
-  "type": "module",
-  "files": [
-    "src"
-  ],
-  "svelte": "./src/index.js",
+  "peerDependencies": {
+    "svelte": "^5.46.1"
+  },
   "exports": {
     ".": {
       "svelte": "./src/index.js",
       "default": "./src/index.js"
+    },
+    "./components": {
+      "svelte": "./src/components/index.js",
+      "default": "./src/components/index.js"
+    },
+    "./internal": {
+      "svelte": "./src/internal/index.js",
+      "default": "./src/internal/index.js"
+    },
+    "./toasts": {
+      "svelte": "./src/toasts/index.js",
+      "default": "./src/toasts/index.js"
+    },
+    "./utils/api": {
+      "svelte": "./src/utils/api.js",
+      "default": "./src/utils/api.js"
+    },
+    "./utils/tooltip": {
+      "svelte": "./src/utils/tooltip.js",
+      "default": "./src/utils/tooltip.js"
+    },
+    "./utils/language": {
+      "svelte": "./src/utils/language.js",
+      "default": "./src/utils/language.js"
+    },
+    "./utils/component": {
+      "svelte": "./src/utils/component.js",
+      "default": "./src/utils/component.js"
+    },
+    "./variables": {
+      "svelte": "./src/variables.js",
+      "default": "./src/variables.js"
     }
   },
-  "scripts": {},
-  "peerDependencies": {
-    "svelte": "^5.46.1"
+  "files": [
+    "src"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
-  "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^6.2.1",
-    "vite": "^7.3.0",
-    "svelte": "^5.46.1"
-  }
+  "scripts": {},
+  "svelte": "./src/index.js",
+  "type": "module"
 }

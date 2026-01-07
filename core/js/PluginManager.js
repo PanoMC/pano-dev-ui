@@ -5,7 +5,8 @@ import { writable, get } from "svelte/store";
 import ApiUtil from "$lib/api.util.js";
 import { base } from "$app/paths";
 
-import { init as initPluginAPI, panoApiClient, panoApiServer } from "$lib/PluginAPI";
+import { init as initPluginAPI, panoApiClient, panoApiServer } from "$lib/PluginAPI.js";
+import { PanoPlugin } from "@panomc/sdk";
 
 export let registeredPages = {};
 
@@ -210,10 +211,12 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
     } catch (_) {
       if (siteInfo.developmentMode) {
         // Create plugin
-        plugins.update(p => { p[pluginId] = {
-          version: "dev-build",
-          uiHash: "dev-build",
-        }; return p; });
+        plugins.update(p => {
+          p[pluginId] = {
+            version: "dev-build",
+            uiHash: "dev-build",
+          }; return p;
+        });
       }
     }
   });
@@ -301,7 +304,7 @@ export async function preparePlugins(siteInfo) {
 
   await verifyPlugins(pluginsInFolder, siteInfo);
 
-  siteInfo.plugins = {...siteInfo.plugins, ...pluginsInFolder};
+  siteInfo.plugins = { ...siteInfo.plugins, ...pluginsInFolder };
 }
 
 export async function initializePlugins(siteInfo) {
@@ -318,7 +321,6 @@ export async function initializePlugins(siteInfo) {
   }
 
   await loadPlugins();
-  await enablePlugins();
 }
 
 async function loadPlugins() {
@@ -359,18 +361,18 @@ async function loadPlugins() {
   for (const pluginId of Object.keys(get(plugins))) {
     const plugin = get(plugins)[pluginId];
 
-    if (plugin.module.onLoad !== undefined) {
-      await plugin.module.onLoad(browser ? panoApiClient : panoApiServer);
-    }
-  }
-}
+    if (!plugin.module || !plugin.module.default) return;
 
-async function enablePlugins() {
-  for (const pluginId of Object.keys(get(plugins))) {
-    const plugin = get(plugins)[pluginId];
+    const PluginClass = plugin.module.default;
 
-    if (plugin.module.onEnable !== undefined) {
-      await plugin.module.onEnable();
+    if (PluginClass instanceof PanoPlugin) {
+      throw new Error("Plugin must extend PanoPlugin");
     }
+
+    const instance = new PluginClass({ pluginId });
+
+    instance.pano = browser ? panoApiClient : panoApiServer;
+
+    instance.onLoad();
   }
 }
