@@ -47,6 +47,10 @@
     "./variables": {
       "svelte": "./src/variables.js",
       "default": "./src/variables.js"
+    },
+    "./svelte": {
+      "svelte": "./src/svelte.js",
+      "default": "./src/svelte.js"
     }
   },
   "files": [
