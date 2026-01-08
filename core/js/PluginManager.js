@@ -7,8 +7,11 @@ import { base } from '$app/paths';
 
 import { init as initPluginAPI, panoApiClient, panoApiServer } from '$lib/PluginAPI.js';
 import { PanoPlugin } from '@panomc/sdk';
+import { findMatch } from './RouteMatcher.js';
 
 export let registeredPages = {};
+
+export { findMatch };
 
 let path, url, admZip;
 
@@ -363,7 +366,7 @@ async function loadPlugins() {
       } catch {
         module = await import(
           /* @vite-ignore */ 'file://' +
-            path.join(path.resolve(upDirs + mainPath, process.cwd(), mainPath))
+          path.join(path.resolve(upDirs + mainPath, process.cwd(), mainPath))
         );
       }
 
