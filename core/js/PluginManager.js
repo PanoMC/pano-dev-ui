@@ -284,7 +284,7 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
           p[pluginId] = structuredClone(pluginInfoManifest);
           return p;
         });
-        pluginManifest = plugins[pluginId];
+        pluginManifest = get(plugins)[pluginId];
         fs.writeFileSync(manifestFilePath, JSON.stringify(pluginManifest, null, 2));
 
         fs.rmSync(path.join(pluginsFolder, pluginId, 'server'), {
