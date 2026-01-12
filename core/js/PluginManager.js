@@ -312,7 +312,7 @@ export async function preparePlugins(siteInfo) {
   Object.keys(get(plugins)).forEach(pluginId => {
     const plugin = get(plugins)[pluginId]
     const { version, uiHash } = plugin.version;
-    newSiteInfoPlugins[pluginId] = {version, uiHash}
+    newSiteInfoPlugins[pluginId] = { version, uiHash }
   })
   siteInfo.plugins = newSiteInfoPlugins;
 }
@@ -340,7 +340,7 @@ async function loadPlugins(siteInfo) {
         plugin.module = await import(
           /* @vite-ignore */ `${base}/plugins/${pluginId}/resources/plugin-ui/client/client.mjs`
         );
-      }catch(e) {
+      } catch (e) {
         if (siteInfo.developmentMode) {
           error(`${pluginId} is not built! Please run \`bun run dev\` in the folder.`);
         }
@@ -373,7 +373,7 @@ async function loadPlugins(siteInfo) {
         try {
           module = await import(
             /* @vite-ignore */ 'file://' +
-              path.join(path.resolve(upDirs + mainPath, process.cwd(), mainPath))
+            path.join(path.resolve(upDirs + mainPath, process.cwd(), mainPath))
           );
         } catch {
           if (siteInfo.developmentMode) {
