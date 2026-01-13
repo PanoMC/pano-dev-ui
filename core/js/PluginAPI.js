@@ -14,6 +14,7 @@ export const pageAPI = {
       page = {
         path: '',
         component: Promise,
+        systemLayout: String,
         restLayout: Boolean,
       },
     ) {
