@@ -90,12 +90,12 @@ function readPluginsFromFolder(siteInfo) {
 
         plugins[pluginId] = JSON.parse(manifestFile);
       } catch (_) {
-        if (siteInfo.developmentMode) {
-          plugins[pluginId] = {
-            version: 'dev-build',
-            uiHash: 'dev-build',
-          };
-        }
+        // if (siteInfo.developmentMode) {
+        //   plugins[pluginId] = {
+        //     version: 'dev-build',
+        //     uiHash: 'dev-build',
+        //   };
+        // }
       }
     });
 
@@ -117,7 +117,7 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
 
   pluginIdInFolderList.forEach((pluginId) => {
     // remove plugin folder if not in developmentMode & pluginsInfo (BE) doesn't have
-    if (!siteInfo.developmentMode && !pluginsInfo[pluginId]) {
+    if (siteInfo.developmentMode || !pluginsInfo[pluginId]) {
       log(`Removing '${pluginId}' folder...`);
 
       fs.rmSync(path.join(pluginsFolder, pluginId, 'server'), {
@@ -224,27 +224,69 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
       });
     });
 
-  if (!siteInfo.developmentMode) {
-    // Install plugin if it exists in pluginsInfo (BE) and not installed
-    const notInstalledPlugins = Object.keys(pluginsInfo).filter(
-      // this prevents it must be enabled and loaded in BE, otherwise UI is null
-      (pluginId) => !get(plugins)[pluginId],
-    );
+  // Install plugin if it exists in pluginsInfo (BE) and not installed
+  const notInstalledPlugins = Object.keys(pluginsInfo).filter(
+    // this prevents it must be enabled and loaded in BE, otherwise UI is null
+    (pluginId) => !get(plugins)[pluginId],
+  );
 
-    for (const pluginId of notInstalledPlugins) {
-      const pluginFolder = path.join(pluginsFolder, pluginId);
+  for (const pluginId of notInstalledPlugins) {
+    const pluginFolder = path.join(pluginsFolder, pluginId);
+    const manifestFilePath = path.join(pluginFolder, manifestFileName);
+    const pluginManifest = pluginsInfo[pluginId];
+
+    log(`Installing plugin '${pluginId}'...`);
+
+    if (!fs.existsSync(pluginFolder)) {
+      fs.mkdirSync(pluginFolder, { recursive: true });
+    }
+
+    plugins.update((p) => {
+      p[pluginId] = structuredClone(pluginManifest);
+      return p;
+    });
+
+    log(`Downloading...`);
+
+    const file = await downloadPluginUiZip(pluginId);
+
+    await downloadAndExtractZip(file, pluginFolder);
+
+    fs.writeFileSync(manifestFilePath, JSON.stringify(pluginManifest, null, 2));
+
+    log(`'${pluginId}' successfully installed.`);
+  }
+
+  // Verify plugin files
+  for (const pluginId of Object.keys(get(plugins))) {
+    const pluginFolder = path.join(pluginsFolder, pluginId);
+
+    const pluginInfoManifest = pluginsInfo[pluginId];
+    let pluginManifest = get(plugins)[pluginId];
+
+    // if files not valid
+    if (
+      pluginManifest.version !== pluginInfoManifest.version ||
+      pluginManifest.uiHash !== pluginInfoManifest.uiHash
+    ) {
       const manifestFilePath = path.join(pluginFolder, manifestFileName);
-      const pluginManifest = pluginsInfo[pluginId];
 
-      log(`Installing plugin '${pluginId}'...`);
-
-      if (!fs.existsSync(pluginFolder)) {
-        fs.mkdirSync(pluginFolder, { recursive: true });
-      }
+      log(`Updating plugin '${pluginId}'.`);
 
       plugins.update((p) => {
-        p[pluginId] = structuredClone(pluginManifest);
+        p[pluginId] = structuredClone(pluginInfoManifest);
         return p;
+      });
+      pluginManifest = get(plugins)[pluginId];
+      fs.writeFileSync(manifestFilePath, JSON.stringify(pluginManifest, null, 2));
+
+      fs.rmSync(path.join(pluginsFolder, pluginId, 'server'), {
+        recursive: true,
+        force: true,
+      });
+      fs.rmSync(path.join(pluginsFolder, pluginId, 'client'), {
+        recursive: true,
+        force: true,
       });
 
       log(`Downloading...`);
@@ -252,51 +294,7 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
       const file = await downloadPluginUiZip(pluginId);
 
       await downloadAndExtractZip(file, pluginFolder);
-
-      fs.writeFileSync(manifestFilePath, JSON.stringify(pluginManifest, null, 2));
-
-      log(`'${pluginId}' successfully installed.`);
-    }
-
-    // Verify plugin files
-    for (const pluginId of Object.keys(get(plugins))) {
-      const pluginFolder = path.join(pluginsFolder, pluginId);
-
-      const pluginInfoManifest = pluginsInfo[pluginId];
-      let pluginManifest = get(plugins)[pluginId];
-
-      // if files not valid
-      if (
-        pluginManifest.version !== pluginInfoManifest.version ||
-        pluginManifest.uiHash !== pluginInfoManifest.uiHash
-      ) {
-        const manifestFilePath = path.join(pluginFolder, manifestFileName);
-
-        log(`Updating plugin '${pluginId}'.`);
-
-        plugins.update((p) => {
-          p[pluginId] = structuredClone(pluginInfoManifest);
-          return p;
-        });
-        pluginManifest = get(plugins)[pluginId];
-        fs.writeFileSync(manifestFilePath, JSON.stringify(pluginManifest, null, 2));
-
-        fs.rmSync(path.join(pluginsFolder, pluginId, 'server'), {
-          recursive: true,
-          force: true,
-        });
-        fs.rmSync(path.join(pluginsFolder, pluginId, 'client'), {
-          recursive: true,
-          force: true,
-        });
-
-        log(`Downloading...`);
-
-        const file = await downloadPluginUiZip(pluginId);
-
-        await downloadAndExtractZip(file, pluginFolder);
-        log(`'${pluginId}' successfully updated.`);
-      }
+      log(`'${pluginId}' successfully updated.`);
     }
   }
 }
@@ -341,10 +339,6 @@ async function loadPlugins(siteInfo) {
           /* @vite-ignore */ `${base}/plugins/${pluginId}/resources/plugin-ui/client/client.mjs`
         );
       } catch (e) {
-        if (siteInfo.developmentMode) {
-          error(`${pluginId} is not built! Please run \`bun run dev\` in the folder.`);
-        }
-
         plugins.update(p => {
           delete p[pluginId]
           return p;
@@ -375,14 +369,15 @@ async function loadPlugins(siteInfo) {
             /* @vite-ignore */ 'file://' +
             path.join(path.resolve(upDirs + mainPath, process.cwd(), mainPath))
           );
-        } catch {
-          if (siteInfo.developmentMode) {
-            error(`${pluginId} is not built! Please run \`bun run dev\` in the folder.`);
-            plugins.update((p) => {
-              delete p[pluginId];
-              return p;
-            });
-          }
+        } catch(e) {
+          error(`${pluginId} could not run! Error:`);
+          error(e);
+
+          plugins.update((p) => {
+            delete p[pluginId];
+            return p;
+          });
+
           return;
         }
       }
