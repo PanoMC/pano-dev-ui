@@ -18,3 +18,4 @@ export const CardMenuItem = components.CardMenuItem;
 export const Date = components.Date;
 export const NoContent = components.NoContent;
 export const Editor = components.Editor;
+export const DragAndDropZone = components.DragAndDropZone;
