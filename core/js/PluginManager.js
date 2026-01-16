@@ -230,73 +230,79 @@ async function verifyPlugins(pluginsInFolder, siteInfo) {
     (pluginId) => !get(plugins)[pluginId],
   );
 
-  for (const pluginId of notInstalledPlugins) {
-    const pluginFolder = path.join(pluginsFolder, pluginId);
-    const manifestFilePath = path.join(pluginFolder, manifestFileName);
-    const pluginManifest = pluginsInfo[pluginId];
-
-    log(`Installing plugin '${pluginId}'...`);
-
-    if (!fs.existsSync(pluginFolder)) {
-      fs.mkdirSync(pluginFolder, { recursive: true });
-    }
-
-    plugins.update((p) => {
-      p[pluginId] = structuredClone(pluginManifest);
-      return p;
-    });
-
-    log(`Downloading...`);
-
-    const file = await downloadPluginUiZip(pluginId);
-
-    await downloadAndExtractZip(file, pluginFolder);
-
-    fs.writeFileSync(manifestFilePath, JSON.stringify(pluginManifest, null, 2));
-
-    log(`'${pluginId}' successfully installed.`);
-  }
-
-  // Verify plugin files
-  for (const pluginId of Object.keys(get(plugins))) {
-    const pluginFolder = path.join(pluginsFolder, pluginId);
-
-    const pluginInfoManifest = pluginsInfo[pluginId];
-    let pluginManifest = get(plugins)[pluginId];
-
-    // if files not valid
-    if (
-      pluginManifest.version !== pluginInfoManifest.version ||
-      pluginManifest.uiHash !== pluginInfoManifest.uiHash
-    ) {
+  await Promise.all(
+    notInstalledPlugins.map(async (pluginId) => {
+      const pluginFolder = path.join(pluginsFolder, pluginId);
       const manifestFilePath = path.join(pluginFolder, manifestFileName);
+      const pluginManifest = pluginsInfo[pluginId];
 
-      log(`Updating plugin '${pluginId}'.`);
+      log(`Installing plugin '${pluginId}'...`);
+
+      if (!fs.existsSync(pluginFolder)) {
+        fs.mkdirSync(pluginFolder, { recursive: true });
+      }
 
       plugins.update((p) => {
-        p[pluginId] = structuredClone(pluginInfoManifest);
+        p[pluginId] = structuredClone(pluginManifest);
         return p;
       });
-      pluginManifest = get(plugins)[pluginId];
-      fs.writeFileSync(manifestFilePath, JSON.stringify(pluginManifest, null, 2));
 
-      fs.rmSync(path.join(pluginsFolder, pluginId, 'server'), {
-        recursive: true,
-        force: true,
-      });
-      fs.rmSync(path.join(pluginsFolder, pluginId, 'client'), {
-        recursive: true,
-        force: true,
-      });
-
-      log(`Downloading...`);
+      log(`Downloading '${pluginId}'...`);
 
       const file = await downloadPluginUiZip(pluginId);
 
       await downloadAndExtractZip(file, pluginFolder);
-      log(`'${pluginId}' successfully updated.`);
-    }
-  }
+
+      fs.writeFileSync(manifestFilePath, JSON.stringify(pluginManifest, null, 2));
+
+      log(`'${pluginId}' successfully installed.`);
+    }),
+  );
+
+  // Verify plugin files
+  await Promise.all(
+    Object.keys(get(plugins)).map(async (pluginId) => {
+      const pluginFolder = path.join(pluginsFolder, pluginId);
+
+      const pluginInfoManifest = pluginsInfo[pluginId];
+      if (!pluginInfoManifest) return;
+
+      let pluginManifest = get(plugins)[pluginId];
+
+      // if files not valid
+      if (
+        pluginManifest.version !== pluginInfoManifest.version ||
+        pluginManifest.uiHash !== pluginInfoManifest.uiHash
+      ) {
+        const manifestFilePath = path.join(pluginFolder, manifestFileName);
+
+        log(`Updating plugin '${pluginId}'.`);
+
+        plugins.update((p) => {
+          p[pluginId] = structuredClone(pluginInfoManifest);
+          return p;
+        });
+        pluginManifest = get(plugins)[pluginId];
+        fs.writeFileSync(manifestFilePath, JSON.stringify(pluginManifest, null, 2));
+
+        fs.rmSync(path.join(pluginsFolder, pluginId, 'server'), {
+          recursive: true,
+          force: true,
+        });
+        fs.rmSync(path.join(pluginsFolder, pluginId, 'client'), {
+          recursive: true,
+          force: true,
+        });
+
+        log(`Downloading '${pluginId}'...`);
+
+        const file = await downloadPluginUiZip(pluginId);
+
+        await downloadAndExtractZip(file, pluginFolder);
+        log(`'${pluginId}' successfully updated.`);
+      }
+    }),
+  );
 }
 
 export async function preparePlugins(siteInfo) {
@@ -369,7 +375,7 @@ async function loadPlugins(siteInfo) {
             /* @vite-ignore */ 'file://' +
             path.join(path.resolve(upDirs + mainPath, process.cwd(), mainPath))
           );
-        } catch(e) {
+        } catch (e) {
           error(`${pluginId} could not run! Error:`);
           error(e);
 
@@ -389,7 +395,7 @@ async function loadPlugins(siteInfo) {
   for (const pluginId of Object.keys(get(plugins))) {
     const plugin = get(plugins)[pluginId];
 
-    if (!plugin.module || !plugin.module.default) return;
+    if (!plugin.module || !plugin.module.default) continue;
 
     const PluginClass = plugin.module.default;
 
