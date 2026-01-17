@@ -32,6 +32,10 @@
       "svelte": "./src/utils/api.js",
       "default": "./src/utils/api.js"
     },
+    "./utils/auth": {
+      "svelte": "./src/utils/auth.js",
+      "default": "./src/utils/auth.js"
+    },
     "./utils/tooltip": {
       "svelte": "./src/utils/tooltip.js",
       "default": "./src/utils/tooltip.js"
