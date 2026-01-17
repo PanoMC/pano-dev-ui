@@ -1,4 +1,4 @@
-import { mount, unmount, hydrate } from 'svelte';
+import { hydrate, mount, unmount } from "svelte";
 
 /**
  * Wraps a dynamic component import to include the correct Svelte runtime mount/unmount methods.
@@ -8,7 +8,7 @@ import { mount, unmount, hydrate } from 'svelte';
  * @returns {() => Promise<any>} - Wrapped importer
  */
 export function viewComponent(importer) {
-  return async () => {
+  const wrapper = async () => {
     const module = await importer();
     return {
       ...module,
@@ -17,4 +17,6 @@ export function viewComponent(importer) {
       hydrate: (options) => hydrate(module.default, options),
     };
   };
+  wrapper._importer = importer;
+  return wrapper;
 }
