@@ -335,6 +335,8 @@ export async function initializePlugins(siteInfo) {
   await loadPlugins(siteInfo);
 }
 
+const moduleCache = new Map();
+
 async function loadPlugins(siteInfo) {
   for (const pluginId of Object.keys(get(plugins))) {
     const plugin = get(plugins)[pluginId];
@@ -352,8 +354,17 @@ async function loadPlugins(siteInfo) {
       }
     } else {
       const pluginFolder = path.join(pluginsFolder, pluginId);
+      const pluginManifest = plugin;
+      const pluginHash = pluginManifest.uiHash || 'no-hash';
+      const cacheKey = `${pluginId}-${pluginHash}`;
 
-      const mainPath = path.join(pluginFolder, 'server', 'server.mjs') + `?${Date.now()}`;
+      if (moduleCache.has(cacheKey) && !siteInfo.developmentMode) {
+        plugin.module = moduleCache.get(cacheKey);
+        continue;
+      }
+
+      const timestamp = siteInfo.developmentMode ? `?${Date.now()}` : '';
+      const mainPath = path.join(pluginFolder, 'server', 'server.mjs') + timestamp;
 
       const __filename = url.fileURLToPath(import.meta.url);
 
@@ -384,11 +395,14 @@ async function loadPlugins(siteInfo) {
             return p;
           });
 
-          return;
+          continue;
         }
       }
 
       plugin.module = module;
+      if (!siteInfo.developmentMode) {
+        moduleCache.set(cacheKey, module);
+      }
     }
   }
 
