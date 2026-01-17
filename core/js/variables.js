@@ -13,6 +13,33 @@ export const JWT_COOKIE_NAME = 'auth_token';
 
 export const CSRF_HEADER = 'X-CSRF-Token';
 
+export function checkDomainRedirection() {
+  if (typeof window === "undefined" || !API_URL || API_URL.startsWith("/")) return;
+
+  try {
+    const apiUrl = new URL(API_URL);
+    const currentUrl = new URL(window.location.href);
+
+    if (
+      currentUrl.hostname !== apiUrl.hostname ||
+      currentUrl.port !== apiUrl.port ||
+      currentUrl.protocol !== apiUrl.protocol
+    ) {
+      const basePath = UI_URL || PANEL_URL || SETUP_URL || "/";
+      let pathname = currentUrl.pathname;
+
+      if (basePath !== "/" && !pathname.startsWith(basePath)) {
+        pathname = basePath + (pathname === "/" ? "" : pathname);
+      }
+
+      const targetUrl = new URL(pathname + currentUrl.search + currentUrl.hash, apiUrl.origin);
+      window.location.href = targetUrl.toString();
+    }
+  } catch (e) {
+    console.error("Failed to check domain redirection:", e);
+  }
+}
+
 export function updateApiUrl(apiUrl) {
   API_URL = apiUrl;
 }
