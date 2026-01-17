@@ -20,20 +20,30 @@ export function checkDomainRedirection() {
     const apiUrl = new URL(API_URL);
     const currentUrl = new URL(window.location.href);
 
-    if (
-      currentUrl.hostname !== apiUrl.hostname ||
-      currentUrl.port !== apiUrl.port ||
-      currentUrl.protocol !== apiUrl.protocol
-    ) {
-      const basePath = UI_URL || PANEL_URL || SETUP_URL || "/";
-      let pathname = currentUrl.pathname;
+    const isDev = import.meta.env.DEV;
 
-      if (basePath !== "/" && !pathname.startsWith(basePath)) {
-        pathname = basePath + (pathname === "/" ? "" : pathname);
+    if (isDev) {
+      if (
+        currentUrl.hostname !== apiUrl.hostname ||
+        currentUrl.port !== apiUrl.port ||
+        currentUrl.protocol !== apiUrl.protocol
+      ) {
+        const basePath = UI_URL || PANEL_URL || SETUP_URL || "/";
+        let pathname = currentUrl.pathname;
+
+        if (basePath !== "/" && !pathname.startsWith(basePath)) {
+          pathname = basePath + (pathname === "/" ? "" : pathname);
+        }
+
+        const targetUrl = new URL(pathname + currentUrl.search + currentUrl.hash, apiUrl.origin);
+        window.location.href = targetUrl.toString();
       }
-
-      const targetUrl = new URL(pathname + currentUrl.search + currentUrl.hash, apiUrl.origin);
-      window.location.href = targetUrl.toString();
+    } else {
+      if (currentUrl.port !== apiUrl.port) {
+        const targetUrl = new URL(window.location.href);
+        targetUrl.port = apiUrl.port;
+        window.location.href = targetUrl.toString();
+      }
     }
   } catch (e) {
     console.error("Failed to check domain redirection:", e);
